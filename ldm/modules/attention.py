@@ -77,7 +77,7 @@ def Normalize(in_channels):
     if (torch.cuda.is_available()):
         return torch.nn.GroupNorm(num_groups=32, num_channels=in_channels, eps=1e-6, affine=True)
     else:
-        return torch.nn.GroupNorm(num_groups=32, num_channels=in_channels, eps=1e-6, affine=True,dtype=torch.bfloat16))
+        return torch.nn.GroupNorm(num_groups=32, num_channels=in_channels, eps=1e-6, affine=True,dtype=torch.bfloat16)
 
 
 class LinearAttention(nn.Module):
