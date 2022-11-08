@@ -13,6 +13,13 @@ from queue import Queue
 from inspect import isfunction
 from PIL import Image, ImageDraw, ImageFont
 
+def Normalize(in_channels, num_groups=32):
+    if (torch.cuda.is_available()):
+        return torch.nn.GroupNorm(num_groups=num_groups, num_channels=in_channels, eps=1e-6, affine=True)
+    else:
+        return torch.nn.GroupNorm(num_groups=num_groups, num_channels=in_channels, eps=1e-6, affine=True,dtype=torch.bfloat16)
+
+
 
 def log_txt_as_img(wh, xc, size=10):
     # wh a tuple of (width, height)
