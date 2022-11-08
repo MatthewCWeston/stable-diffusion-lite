@@ -166,7 +166,7 @@ class FrozenCLIPTextEmbedder(nn.Module):
     """
     Uses the CLIP transformer encoder for text.
     """
-    def __init__(self, version='ViT-L/14', device="cuda", max_length=77, n_repeat=1, normalize=True):
+    def __init__(self, version='ViT-L/14', device='cuda' if torch.cuda.is_available() else 'cpu', max_length=77, n_repeat=1, normalize=True):
         super().__init__()
         self.model, _ = clip.load(version, jit=False, device="cpu")
         self.device = device
