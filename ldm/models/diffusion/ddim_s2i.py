@@ -76,6 +76,7 @@ class DDIMSampler_Structure2Img(object):
                log_every_t=100,
                unconditional_guidance_scale=1.,
                unconditional_conditioning=None,
+               hook_fn=None,
                # this has to come in the same format as the conditioning, # e.g. as encoded tokens, ...
                **kwargs
                ):
@@ -108,6 +109,7 @@ class DDIMSampler_Structure2Img(object):
                                                     log_every_t=log_every_t,
                                                     unconditional_guidance_scale=unconditional_guidance_scale,
                                                     unconditional_conditioning=unconditional_conditioning,
+                                                    hook_fn=hook_fn,
                                                     )
         return samples, intermediates
 
@@ -117,7 +119,8 @@ class DDIMSampler_Structure2Img(object):
                       callback=None, timesteps=None, quantize_denoised=False,
                       mask=None, x0=None, img_callback=None, log_every_t=100,
                       temperature=1., noise_dropout=0., score_corrector=None, corrector_kwargs=None,
-                      unconditional_guidance_scale=1., unconditional_conditioning=None,):
+                      unconditional_guidance_scale=1., unconditional_conditioning=None,
+                      hook_fn=None):
         device = self.model.betas.device
         b = shape[0]
         if x_T is None:
@@ -146,7 +149,11 @@ class DDIMSampler_Structure2Img(object):
                 assert x0 is not None
                 img_orig = self.model.q_sample(x0, ts)  # TODO: deterministic forward pass?
                 img = img_orig * mask + (1. - mask) * img
-
+            # Here's the special part - MCW
+            if hook_fn: 
+                # Call on img, not pred_x0. Tweaks results before each step.
+                # Use a lambda when providing the argument, if you want it to use something else from outside.
+                img = hook_fn(img)
             outs = self.p_sample_ddim(img, cond, ts, index=index, use_original_steps=ddim_use_original_steps,
                                       quantize_denoised=quantize_denoised, temperature=temperature,
                                       noise_dropout=noise_dropout, score_corrector=score_corrector,
@@ -203,7 +210,7 @@ class DDIMSampler_Structure2Img(object):
             noise = torch.nn.functional.dropout(noise, p=noise_dropout)
         x_prev = a_prev.sqrt() * pred_x0 + dir_xt + noise
         return x_prev, pred_x0
-
+    
     @torch.no_grad()
     def stochastic_encode(self, x0, t, use_original_steps=False, noise=None):
         # fast, but does not allow for exact reconstruction
@@ -240,3 +247,4 @@ class DDIMSampler_Structure2Img(object):
                                           unconditional_guidance_scale=unconditional_guidance_scale,
                                           unconditional_conditioning=unconditional_conditioning)
         return x_dec
+        
