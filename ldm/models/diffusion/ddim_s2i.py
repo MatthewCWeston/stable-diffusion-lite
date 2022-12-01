@@ -54,7 +54,7 @@ class DDIMSampler_Structure2Img(object):
                         1 - self.alphas_cumprod / self.alphas_cumprod_prev))
         self.register_buffer('ddim_sigmas_for_original_num_steps', sigmas_for_original_sampling_steps)
 
-    @torch.no_grad()
+    #@torch.no_grad()
     def sample(self,
                S,
                batch_size,
@@ -113,7 +113,7 @@ class DDIMSampler_Structure2Img(object):
                                                     )
         return samples, intermediates
 
-    @torch.no_grad()
+    #@torch.no_grad()
     def ddim_sampling(self, cond, shape,
                       x_T=None, ddim_use_original_steps=False,
                       callback=None, timesteps=None, quantize_denoised=False,
@@ -154,19 +154,20 @@ class DDIMSampler_Structure2Img(object):
                 # Call on img, not pred_x0. Tweaks results before each step.
                 # Use a lambda when providing the argument, if you want it to use something else from outside.
                 img = hook_fn(img)
-            outs = self.p_sample_ddim(img, cond, ts, index=index, use_original_steps=ddim_use_original_steps,
-                                      quantize_denoised=quantize_denoised, temperature=temperature,
-                                      noise_dropout=noise_dropout, score_corrector=score_corrector,
-                                      corrector_kwargs=corrector_kwargs,
-                                      unconditional_guidance_scale=unconditional_guidance_scale,
-                                      unconditional_conditioning=unconditional_conditioning)
-            img, pred_x0 = outs
-            if callback: callback(i)
-            if img_callback: img_callback(pred_x0, i)
+            with torch.no_grad(): # Moved here to allow grad in hook function
+                outs = self.p_sample_ddim(img, cond, ts, index=index, use_original_steps=ddim_use_original_steps,
+                                          quantize_denoised=quantize_denoised, temperature=temperature,
+                                          noise_dropout=noise_dropout, score_corrector=score_corrector,
+                                          corrector_kwargs=corrector_kwargs,
+                                          unconditional_guidance_scale=unconditional_guidance_scale,
+                                          unconditional_conditioning=unconditional_conditioning)
+                img, pred_x0 = outs
+                if callback: callback(i)
+                if img_callback: img_callback(pred_x0, i)
 
-            if index % log_every_t == 0 or index == total_steps - 1:
-                intermediates['x_inter'].append(img)
-                intermediates['pred_x0'].append(pred_x0)
+                if index % log_every_t == 0 or index == total_steps - 1:
+                    intermediates['x_inter'].append(img)
+                    intermediates['pred_x0'].append(pred_x0)
 
         return img, intermediates
 
