@@ -208,3 +208,10 @@ def parallel_data_prefetch(
         return out
     else:
         return gather_res
+
+# Used for optional gradient calculation.
+class EmptyContext:
+        def __enter__(self):
+            torch.no_grad()
+        def __exit__(self, exc_type, exc_value, traceback):
+            pass
